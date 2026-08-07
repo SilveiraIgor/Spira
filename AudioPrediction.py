@@ -1,6 +1,9 @@
 import torch
 import os
 from pathlib import Path
+import librosa
+import panns_inference
+from panns_inference import AudioTagging
 
 def get_files(folder_path):
     return [str(p) for p in Path(folder_path).iterdir() if p.is_file()]
@@ -12,10 +15,31 @@ def filtrar_audios(lista, terminacao_desejada):
             nova_lista.append(opcao)
     print("Tamanho da lista pós filtragem: ", len(nova_lista))
     return nova_lista
+def separar_listas(lista, grupo1, grupo2):
+    lista_grupo1, lista_grupo2 = [], []
+    for elemento in lista:
+        if grupo1 in elemento:
+            lista_grupo1.append(elemento)
+        elif grupo2 in elemento:
+            lista_grupo2.append(elemento)
+    print(f"-- O grupo {grupo1} tem {len(lista_grupo1)} elementos, {grupo2} tem {len(lista_grupo2)} ")
+    return lista_grupo1, lista_grupo2
+
+def gerar_tensores(lista_label_0, lista_label_1):
+    for audio_paciente in lista_label_0[:1]:
+        audio_path = audio_paciente
+        (audio, _) = librosa.load(audio_path, sr=32000, mono=True)
+        audio = audio[None, :]  # (batch_size, segment_samples)
+        at = AudioTagging(checkpoint_path=None, device='cuda')
+        (clipwise_output, embedding) = at.inference(audio)
+    return embedding
+
 
 
 files = get_files("../dados_spira/clean/")
 files = filtrar_audios(files, "VOWEL.wav")
 for f in files[:10]:
     print(f)
+label_0, label_1 = separar_listas(files, "IR", "PARK")
+print(gerar_tensores(label_0, label_1))
 
