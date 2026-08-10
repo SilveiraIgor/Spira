@@ -132,8 +132,8 @@ def train_model(model, X_data, Y_data, X_teste, Y_teste, epochs=10):
     # if (epoch + 1) % 10 == 0: # Print loss every epoch
     #   print(f'Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.4f}')
   #print("Training complete!")
-  print(f"K de treino: {ks_treino[:20]}")
-  print(f"K de teste: {ks_teste[:20]}")
+  #print(f"K de treino: {ks_treino[:20]}")
+  #print(f"K de teste: {ks_teste[:20]}")
   return losses, acc_treino, acc_teste, ks_treino, ks_teste
 
 def gerar_log_saida(listas, colunas):
@@ -149,7 +149,7 @@ def gerar_log_saida(listas, colunas):
     df.to_csv(NOME_RUN, index=False)
 
 
-NOME_RUN = "Controle-Asma.csv"
+NOME_RUN = "Controle-Insufs.csv"
 print("Gerando os tensores")
 files = get_files("../dados_spira/clean/")
 files = filtrar_audios(files, "VOWEL.wav")
@@ -158,7 +158,7 @@ for f in files[:10]:
 """
 Os labels são IR, PARK, ASMA, CTRL, TABA
 """
-label_0, label_1 = separar_listas(files, "CTRL", "ASMA")
+label_0, label_1 = separar_listas(files, "CTRL", "IR")
 X_treino, Y_treino, X_teste, Y_teste = gerar_tensores(label_0, label_1)
 print("Fim da geração dos tensores: ", X_treino.shape, len(Y_treino))
 
