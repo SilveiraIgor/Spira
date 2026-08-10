@@ -25,8 +25,11 @@ def separar_listas(lista, grupo1, grupo2):
     return lista_grupo1, lista_grupo2
 #--------------------------------------------------
 
-def test_perf_model(Y_hat, Y):
-  discretized_outputs = (Y_hat >= 0.5).float()
+def test_perf_model(Y_hat, Y, tipo="regressao"):
+  if tipo == "regressao":
+    discretized_outputs = (Y_hat >= 0.5).float()
+  else:
+    discretized_outputs = Y_hat.argmax(dim=1)
   # Compare with the Y_tensor and count where they are equal
   matches = (discretized_outputs == Y).sum().item()
   total_elements = Y.numel()
