@@ -128,8 +128,8 @@ def train_model(model, X_data, Y_data, X_teste, Y_teste, epochs=10):
     # if (epoch + 1) % 10 == 0: # Print loss every epoch
     #   print(f'Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.4f}')
   #print("Training complete!")
-  print(f"K de treino: {ks_treino}")
-  print(f"K de teste: {ks_teste}")
+  print(f"K de treino: {ks_treino[:20]}")
+  print(f"K de teste: {ks_teste[:20]}")
   return acc_treino, acc_teste
 
 
@@ -149,6 +149,6 @@ print("Fim da geração dos tensores: ", X_treino.shape, len(Y_treino))
 
 output_size = 1
 model = NeuralNetwork(2048, 27, output_size)
-treino, teste = train_model(model, X_treino, Y_treino, X_teste, Y_teste, epochs=10)
-print(f"Performance no treino: {treino}")
-print(f"Performance no teste: {teste}")
+treino, teste = train_model(model, X_treino, Y_treino, X_teste, Y_teste, epochs=100)
+print(f"Performance no treino: {treino[:20]}")
+print(f"Performance no teste: {teste[:20]}")
