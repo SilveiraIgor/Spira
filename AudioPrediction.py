@@ -32,11 +32,12 @@ def separar_listas(lista, grupo1, grupo2):
     print(f"-- O grupo {grupo1} tem {len(lista_grupo1)} elementos, {grupo2} tem {len(lista_grupo2)} ")
     return lista_grupo1, lista_grupo2
 
+at = AudioTagging(checkpoint_path=None, device='cuda')
 def gerar_tensores(lista_label_0, lista_label_1):
     embeddings_train = torch.empty((0, 2048))
     embeddings_test = torch.empty((0, 2048))
     Y = []
-    at = AudioTagging(checkpoint_path=None, device='cuda')
+    #at = AudioTagging(checkpoint_path=None, device='cuda')
     Y.extend([0]*len(lista_label_0))
     Y.extend([1]*len(lista_label_1))
     listas = lista_label_0 + lista_label_1
@@ -148,24 +149,54 @@ def gerar_log_saida(listas, colunas):
     df = pd.DataFrame(log_saida)
     df.to_csv(NOME_RUN, index=False)
 
+def gerar_medias(L0, L1, files):
+    accs, kappas = [], []
+    label_0, label_1 = separar_listas(files, L0, L1)
+    for i in range(100):
+        if (i+1)%10 == 0:
+            print(i)
+        output_size = 1
+        model = NeuralNetwork(2048, 27, output_size)
+        X_treino, Y_treino, X_teste, Y_teste = gerar_tensores(label_0, label_1)
+        #print("Fim da geração dos tensores: ", X_treino.shape, len(Y_treino))
+        losses, acc_treino, acc_teste, ks_treino, ks_teste = train_model(model, X_treino, Y_treino, X_teste, Y_teste, epochs=EPOCHS)
+        #print(acc_teste[-1], ks_teste[-1])  
+        accs.append(acc_teste[-1])
+        kappas.append(ks_teste[-1])
+    print(f"Média de acc: {np.mean(accs)} e desvio padrão: {np.std(accs)} ")
+    print(f"Média de kappa: {np.mean(kappas)} e desvio padrão: {np.std(kappas)} ")
 
-NOME_RUN = "Controle-Tabagismo.csv"
+
+
+
+
+
+NOME_RUN = "Controle-Tabagismo00.csv"
+avaliacao = "medias"
+L0, L1 = "CTRL", "ASMA"
 print("Gerando os tensores")
 files = get_files("../dados_spira/clean/")
 files = filtrar_audios(files, "VOWEL.wav")
+EPOCHS = 350
 for f in files[:10]:
     print(f)
 """
 Os labels são IR, PARK, ASMA, CTRL, TABA
 """
-label_0, label_1 = separar_listas(files, "CTRL", "TABA")
-X_treino, Y_treino, X_teste, Y_teste = gerar_tensores(label_0, label_1)
-print("Fim da geração dos tensores: ", X_treino.shape, len(Y_treino))
+#label_0, label_1 = separar_listas(files, "CTRL", "TABA")
+#X_treino, Y_treino, X_teste, Y_teste = gerar_tensores(label_0, label_1)
+#print("Fim da geração dos tensores: ", X_treino.shape, len(Y_treino))
 
 output_size = 1
 model = NeuralNetwork(2048, 27, output_size)
-losses, acc_treino, acc_teste, ks_treino, ks_teste = train_model(model, X_treino, Y_treino, X_teste, Y_teste, epochs=350)
-gerar_log_saida([losses, acc_treino, ks_treino, acc_teste, ks_teste],
+if avaliacao == "medias":
+    gerar_medias(L0, L1, files)
+else:
+    label_0, label_1 = separar_listas(files, L0, L1)
+    X_treino, Y_treino, X_teste, Y_teste = gerar_tensores(label_0, label_1)
+    print("Fim da geração dos tensores: ", X_treino.shape, len(Y_treino))
+    losses, acc_treino, acc_teste, ks_treino, ks_teste = train_model(model, X_treino, Y_treino, X_teste, Y_teste, epochs=EPOCHS)
+    gerar_log_saida([losses, acc_treino, ks_treino, acc_teste, ks_teste],
                 ["loss", "acc_treino", "K_treino", "acc_teste", "K_teste"])
-#print(f"Performance no treino: {treino[:20]}")
-#print(f"Performance no teste: {teste[:20]}")
+    #print("Ultimas accs: ", acc_teste[-10:])
+    #print("Ultimos Kappas: ", ks_teste[-10:])
