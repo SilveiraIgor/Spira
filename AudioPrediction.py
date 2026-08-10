@@ -149,7 +149,7 @@ def gerar_log_saida(listas, colunas):
     df.to_csv(NOME_RUN, index=False)
 
 
-NOME_RUN = "Controle-Insufs.csv"
+NOME_RUN = "Controle-Tabagismo.csv"
 print("Gerando os tensores")
 files = get_files("../dados_spira/clean/")
 files = filtrar_audios(files, "VOWEL.wav")
@@ -158,13 +158,13 @@ for f in files[:10]:
 """
 Os labels são IR, PARK, ASMA, CTRL, TABA
 """
-label_0, label_1 = separar_listas(files, "CTRL", "IR")
+label_0, label_1 = separar_listas(files, "CTRL", "TABA")
 X_treino, Y_treino, X_teste, Y_teste = gerar_tensores(label_0, label_1)
 print("Fim da geração dos tensores: ", X_treino.shape, len(Y_treino))
 
 output_size = 1
 model = NeuralNetwork(2048, 27, output_size)
-losses, acc_treino, acc_teste, ks_treino, ks_teste = train_model(model, X_treino, Y_treino, X_teste, Y_teste, epochs=200)
+losses, acc_treino, acc_teste, ks_treino, ks_teste = train_model(model, X_treino, Y_treino, X_teste, Y_teste, epochs=350)
 gerar_log_saida([losses, acc_treino, ks_treino, acc_teste, ks_teste],
                 ["loss", "acc_treino", "K_treino", "acc_teste", "K_teste"])
 #print(f"Performance no treino: {treino[:20]}")
