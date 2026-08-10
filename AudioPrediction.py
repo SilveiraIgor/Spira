@@ -1,38 +1,15 @@
 import torch
-import pandas as pd
-import os
 import numpy as np
-from pathlib import Path
 import librosa
-import panns_inference
 from panns_inference import AudioTagging
-import torch
 import torch.nn as nn
 import torch.optim as optim
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, cohen_kappa_score
-
-def get_files(folder_path):
-    return [str(p) for p in Path(folder_path).iterdir() if p.is_file()]
-def filtrar_audios(lista, terminacao_desejada):
-    print("Tamanho da lista antes da filtragem: ", len(lista))
-    nova_lista = []
-    for opcao in lista:
-        if opcao.endswith(terminacao_desejada) and not("TEST" in opcao):
-            nova_lista.append(opcao)
-    print("Tamanho da lista pós filtragem: ", len(nova_lista))
-    return nova_lista
-def separar_listas(lista, grupo1, grupo2):
-    lista_grupo1, lista_grupo2 = [], []
-    for elemento in lista:
-        if grupo1 in elemento:
-            lista_grupo1.append(elemento)
-        elif grupo2 in elemento:
-            lista_grupo2.append(elemento)
-    print(f"-- O grupo {grupo1} tem {len(lista_grupo1)} elementos, {grupo2} tem {len(lista_grupo2)} ")
-    return lista_grupo1, lista_grupo2
+from utils import *
+from RedeNeural import NeuralNetwork
 
 at = AudioTagging(checkpoint_path=None, device='cuda')
+
 def gerar_tensores(lista_label_0, lista_label_1):
     embeddings_train = torch.empty((0, 2048))
     embeddings_test = torch.empty((0, 2048))
@@ -58,37 +35,7 @@ def gerar_tensores(lista_label_0, lista_label_1):
         embeddings_test = torch.cat([embeddings_test, torch.from_numpy(embedding)], dim=0)
     return embeddings_train, np.array(Y_train), embeddings_test, np.array(Y_test)
 
-# Define the Neural Network model
-class NeuralNetwork(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
-        super(NeuralNetwork, self).__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size)  # Input layer to hidden layer
-        self.relu = nn.ReLU()                          # Activation function
-        self.fc2 = nn.Linear(hidden_size, output_size) # Hidden layer to output layer
-        self.sigmoid = nn.Sigmoid()                    # Sigmoid for binary classification
-
-    def forward(self, x):
-        out = self.fc1(x)
-        out = self.relu(out)
-        out = self.fc2(out)
-        out = self.sigmoid(out)
-        return out
-
-
-def test_acc_model(Y_hat, Y):
-  discretized_outputs = (Y_hat >= 0.5).float()
-  # Compare with the Y_tensor and count where they are equal
-  matches = (discretized_outputs == Y).sum().item()
-  total_elements = Y.numel()
-  #print(f"Número de correspondências: {matches}")
-  #print(f"Número total de elementos: {total_elements}")
-  acc = matches / total_elements * 100
-  #print(f"Porcentagem de correspondências (Accuracy): {acc:.2f}%")
-  kappa = cohen_kappa_score(discretized_outputs, Y)
-  return acc, kappa
-
 def train_model(model, X_data, Y_data, X_teste, Y_teste, epochs=10):
-  # Convert numpy arrays to PyTorch tensors
   acc_treino, acc_teste = [], []
   ks_treino, ks_teste = [], []
   losses = []
@@ -102,11 +49,11 @@ def train_model(model, X_data, Y_data, X_teste, Y_teste, epochs=10):
   optimizer.zero_grad() # Clear gradients
   with torch.no_grad():
     outputs = model(X_tensor)
-    acc, k = test_acc_model(outputs, Y_tensor)
+    acc, k = test_perf_model(outputs, Y_tensor)
     acc_treino.append(acc)
     ks_treino.append(k)
     outputs2 = model(X_teste_tensor)
-    acc, k = test_acc_model(outputs2, Y_teste_tensor)
+    acc, k = test_perf_model(outputs2, Y_teste_tensor)
     acc_teste.append(acc)
     ks_teste.append(k)
     losses.append(-1)
@@ -122,45 +69,29 @@ def train_model(model, X_data, Y_data, X_teste, Y_teste, epochs=10):
     optimizer.step()      # Update weights
     with torch.no_grad():
       outputs = model(X_tensor)
-      acc, k = test_acc_model(outputs, Y_tensor)
+      acc, k = test_perf_model(outputs, Y_tensor)
       acc_treino.append(acc)
       ks_treino.append(k)
       outputs2 = model(X_teste_tensor)
-      acc, k = test_acc_model(outputs2, Y_teste_tensor)
+      acc, k = test_perf_model(outputs2, Y_teste_tensor)
       acc_teste.append(acc)
       ks_teste.append(k)
     optimizer.zero_grad() # Clear gradients
-    # if (epoch + 1) % 10 == 0: # Print loss every epoch
-    #   print(f'Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.4f}')
-  #print("Training complete!")
   #print(f"K de treino: {ks_treino[:20]}")
   #print(f"K de teste: {ks_teste[:20]}")
   return losses, acc_treino, acc_teste, ks_treino, ks_teste
 
-def gerar_log_saida(listas, colunas):
-    log_saida = []
-    for indice_lista in range(len(listas[0])):
-        dic = {}
-        for metrica in range(len(listas)):
-            nome_metrica = colunas[metrica]
-            valor_metrica = listas[metrica][indice_lista]
-            dic[nome_metrica] = valor_metrica
-        log_saida.append(dic)
-    df = pd.DataFrame(log_saida)
-    df.to_csv(NOME_RUN, index=False)
 
 def gerar_medias(L0, L1, files):
     accs, kappas = [], []
     label_0, label_1 = separar_listas(files, L0, L1)
-    for i in range(100):
+    for i in range(2):
         if (i+1)%10 == 0:
             print(i)
         output_size = 1
         model = NeuralNetwork(2048, 27, output_size)
         X_treino, Y_treino, X_teste, Y_teste = gerar_tensores(label_0, label_1)
-        #print("Fim da geração dos tensores: ", X_treino.shape, len(Y_treino))
         losses, acc_treino, acc_teste, ks_treino, ks_teste = train_model(model, X_treino, Y_treino, X_teste, Y_teste, epochs=EPOCHS)
-        #print(acc_teste[-1], ks_teste[-1])  
         accs.append(acc_teste[-1])
         kappas.append(ks_teste[-1])
     print(f"Média de acc: {np.mean(accs)} e desvio padrão: {np.std(accs)} ")
@@ -169,26 +100,17 @@ def gerar_medias(L0, L1, files):
 
 
 
-
-
 NOME_RUN = "Controle-Tabagismo00.csv"
 avaliacao = "medias"
-L0, L1 = "CTRL", "ASMA"
+L0, L1 = "CTRL", "TABA"
 print("Gerando os tensores")
 files = get_files("../dados_spira/clean/")
 files = filtrar_audios(files, "VOWEL.wav")
 EPOCHS = 350
-for f in files[:10]:
-    print(f)
 """
 Os labels são IR, PARK, ASMA, CTRL, TABA
 """
-#label_0, label_1 = separar_listas(files, "CTRL", "TABA")
-#X_treino, Y_treino, X_teste, Y_teste = gerar_tensores(label_0, label_1)
-#print("Fim da geração dos tensores: ", X_treino.shape, len(Y_treino))
-
-output_size = 1
-model = NeuralNetwork(2048, 27, output_size)
+model = NeuralNetwork(2048, 27, 1)
 if avaliacao == "medias":
     gerar_medias(L0, L1, files)
 else:
