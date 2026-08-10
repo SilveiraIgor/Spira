@@ -1,4 +1,5 @@
 import torch
+import pandas as pd
 import os
 import numpy as np
 from pathlib import Path
@@ -89,13 +90,14 @@ def train_model(model, X_data, Y_data, X_teste, Y_teste, epochs=10):
   # Convert numpy arrays to PyTorch tensors
   acc_treino, acc_teste = [], []
   ks_treino, ks_teste = [], []
+  losses = []
   X_tensor = X_data #torch.from_numpy(X_data).float()
   Y_tensor = torch.from_numpy(Y_data).float().view(-1, 1) # Reshape Y to (N, 1) for MSE loss
   X_teste_tensor = X_teste#torch.from_numpy(X_teste).float()
   Y_teste_tensor = torch.from_numpy(Y_teste).float().view(-1, 1) # Reshape Y to (N, 1) for MSE loss
   # Define Loss and Optimizer
   criterion = nn.MSELoss() # Mean Squared Error Loss
-  optimizer = optim.Adam(model.parameters(), lr=0.001) # Adam optimizer with a learning rate
+  optimizer = optim.Adam(model.parameters(), lr=0.0001) # Adam optimizer with a learning rate
   optimizer.zero_grad() # Clear gradients
   with torch.no_grad():
     outputs = model(X_tensor)
@@ -106,12 +108,14 @@ def train_model(model, X_data, Y_data, X_teste, Y_teste, epochs=10):
     acc, k = test_acc_model(outputs2, Y_teste_tensor)
     acc_teste.append(acc)
     ks_teste.append(k)
+    losses.append(-1)
   optimizer.zero_grad() # Clear gradients
   #print("Starting model training...")
   for epoch in range(epochs):
     # Forward pass
     outputs = model(X_tensor)
     loss = criterion(outputs, Y_tensor)
+    losses.append(loss.item())
     # Backward and optimize
     loss.backward()       # Backpropagation
     optimizer.step()      # Update weights
@@ -130,11 +134,22 @@ def train_model(model, X_data, Y_data, X_teste, Y_teste, epochs=10):
   #print("Training complete!")
   print(f"K de treino: {ks_treino[:20]}")
   print(f"K de teste: {ks_teste[:20]}")
-  return acc_treino, acc_teste
+  return losses, acc_treino, acc_teste, ks_treino, ks_teste
+
+def gerar_log_saida(listas, colunas):
+    log_saida = []
+    for indice_lista in range(len(listas[0])):
+        dic = {}
+        for metrica in range(len(listas)):
+            nome_metrica = colunas[metrica]
+            valor_metrica = listas[metrica][indice_lista]
+            dic[nome_metrica] = valor_metrica
+        log_saida.append(dic)
+    df = pd.DataFrame(log_saida)
+    df.to_csv(NOME_RUN, index=False)
 
 
-
-
+NOME_RUN = "Controle-Asma.csv"
 print("Gerando os tensores")
 files = get_files("../dados_spira/clean/")
 files = filtrar_audios(files, "VOWEL.wav")
@@ -149,6 +164,8 @@ print("Fim da geração dos tensores: ", X_treino.shape, len(Y_treino))
 
 output_size = 1
 model = NeuralNetwork(2048, 27, output_size)
-treino, teste = train_model(model, X_treino, Y_treino, X_teste, Y_teste, epochs=100)
-print(f"Performance no treino: {treino[:20]}")
-print(f"Performance no teste: {teste[:20]}")
+losses, acc_treino, acc_teste, ks_treino, ks_teste = train_model(model, X_treino, Y_treino, X_teste, Y_teste, epochs=200)
+gerar_log_saida([losses, acc_treino, ks_treino, acc_teste, ks_teste],
+                ["loss", "acc_treino", "K_treino", "acc_teste", "K_teste"])
+#print(f"Performance no treino: {treino[:20]}")
+#print(f"Performance no teste: {teste[:20]}")
