@@ -85,7 +85,7 @@ def train_model(model, X_data, Y_data, X_teste, Y_teste, epochs=10):
 def gerar_medias(L0, L1, files):
     accs, kappas = [], []
     label_0, label_1 = separar_listas(files, L0, L1)
-    for i in range(2):
+    for i in range(100):
         if (i+1)%10 == 0:
             print(i)
         model = NeuralNetwork(2048, 27, 2)
@@ -99,25 +99,28 @@ def gerar_medias(L0, L1, files):
 
 
 
-NOME_RUN = "Controle-Tabagismo00.csv"
+NOME_RUN = "classificacao-teste.csv"
 avaliacao = "medias"
-L0, L1 = "CTRL", "TABA"
+L0, L1 = "CTRL", "ASMA"
 print("Gerando os tensores")
 files = get_files("../dados_spira/clean/")
 files = filtrar_audios(files, "VOWEL.wav")
-EPOCHS = 350
+EPOCHS = 400
 """
 Os labels são IR, PARK, ASMA, CTRL, TABA
 """
 model = NeuralNetwork(2048, 27, 2)
 if avaliacao == "medias":
     gerar_medias(L0, L1, files)
-else:
+elif avaliacao == "runs":
     label_0, label_1 = separar_listas(files, L0, L1)
     X_treino, Y_treino, X_teste, Y_teste = gerar_tensores(label_0, label_1)
     print("Fim da geração dos tensores: ", X_treino.shape, len(Y_treino))
     losses, acc_treino, acc_teste, ks_treino, ks_teste = train_model(model, X_treino, Y_treino, X_teste, Y_teste, epochs=EPOCHS)
-    gerar_log_saida([losses, acc_treino, ks_treino, acc_teste, ks_teste],
-                ["loss", "acc_treino", "K_treino", "acc_teste", "K_teste"])
+    gerar_log_saida(NOME_RUN, 
+                    [losses, acc_treino, ks_treino, acc_teste, ks_teste],
+                    ["loss", "acc_treino", "K_treino", "acc_teste", "K_teste"])
     #print("Ultimas accs: ", acc_teste[-10:])
     #print("Ultimos Kappas: ", ks_teste[-10:])
+else:
+    print("opção de avaliação inválida")

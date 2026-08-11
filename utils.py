@@ -37,7 +37,7 @@ def test_perf_model(Y_hat, Y, tipo="regressao"):
   kappa = cohen_kappa_score(discretized_outputs, Y)
   return acc, kappa
 
-def gerar_log_saida(listas, colunas):
+def gerar_log_saida(NOME_RUN,listas, colunas):
     log_saida = []
     for indice_lista in range(len(listas[0])):
         dic = {}
