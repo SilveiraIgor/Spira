@@ -15,9 +15,29 @@ def audios_em_df(df, audios):
     coluna_parlenda = df.coleta_parlenda
     coluna_vogal = df.coleta_vogal
     coluna_frase = df.coleta_frase
-    print(len(coluna_frase))
-    for audio in audios:
-        pass
+    print(coluna_vogal[:5])
+    problemas_vogal, problemas_parlenda, problemas_frase = 0,0,0
+    for nome_audio in audios:
+        audio = nome_audio[21:]
+        audio = audio.replace("__F_", "%_F_")
+        audio = audio.replace("__M_", "%_M_")
+        #print(audio)
+        #break
+        if audio.endswith("VOWEL.wav"):
+            if not(audio in coluna_vogal.values):
+                print(audio)
+                problemas_vogal += 1
+        elif audio.endswith("RHYME.wav"):
+            if not(audio in coluna_parlenda.values):
+                problemas_parlenda += 1
+        elif audio.endswith("PHRASE.wav"):
+            if not(audio in coluna_frase.values):
+                problemas_frase += 1
+        else:
+            pass
+    print(f"""Número de problemas: {problemas_vogal} de vogal, 
+          {problemas_parlenda} de parlenda, 
+          {problemas_frase} de frase""")
 
 
 def df_em_audios(df, audios, coluna):
@@ -57,6 +77,7 @@ print(f"Tamanho do dataset antes de filtrar: {df.shape}")
 df_filtrado = filtrar_testes(df)
 print(f"Tamanho do dataset depois de filtrar: {df_filtrado.shape}")
 audios = get_files("../dados_spira/clean/")
+audios = filtrar_audios(audios, ".wav")
 print("Quantidade de audios: ", len(audios))
 if testar == "dataset":
     df_em_audios(df_filtrado, audios, 'coleta_vogal')
