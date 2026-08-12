@@ -19,20 +19,29 @@ def gerar_tensores(lista_label_0, lista_label_1):
     Y.extend([1]*len(lista_label_1))
     listas = lista_label_0 + lista_label_1
     X_train, X_test, Y_train, Y_test = train_test_split(listas, Y, test_size=0.2, stratify=Y)
-    for audio_paciente in X_train:
+    for idx, audio_paciente in enumerate(X_train):
+        #print(audio_paciente)
         audio_path = audio_paciente
         (audio, _) = librosa.load(audio_path, sr=32000, mono=True)
         audio = audio[None, :]  # (batch_size, segment_samples)
         #at = AudioTagging(checkpoint_path=None, device='cuda')
-        (clipwise_output, embedding) = at.inference(audio)
-        embeddings_train = torch.cat([embeddings_train, torch.from_numpy(embedding)], dim=0)
-    for audio_paciente in X_test:
+        try:
+            (clipwise_output, embedding) = at.inference(audio)
+            embeddings_train = torch.cat([embeddings_train, torch.from_numpy(embedding)], dim=0)
+        except RuntimeError as e:
+            pos = X_train.index(audio_paciente)
+            Y_train.pop(pos)
+    for idx, audio_paciente in enumerate(X_test):
         audio_path = audio_paciente
         (audio, _) = librosa.load(audio_path, sr=32000, mono=True)
         audio = audio[None, :]  # (batch_size, segment_samples)
         #at = AudioTagging(checkpoint_path=None, device='cuda')
-        (clipwise_output, embedding) = at.inference(audio)
-        embeddings_test = torch.cat([embeddings_test, torch.from_numpy(embedding)], dim=0)
+        try:
+            (clipwise_output, embedding) = at.inference(audio)
+            embeddings_test = torch.cat([embeddings_test, torch.from_numpy(embedding)], dim=0)
+        except RuntimeError as e:
+            pos = X_test.index(audio_paciente)
+            Y_test.pop(pos)
     return embeddings_train, np.array(Y_train), embeddings_test, np.array(Y_test)
 
 def train_model(model, X_data, Y_data, X_teste, Y_teste, epochs=10):
@@ -101,10 +110,10 @@ def gerar_medias(L0, L1, files):
 
 NOME_RUN = "classificacao-teste.csv"
 avaliacao = "medias"
-L0, L1 = "CTRL", "ASMA"
+L0, L1 = "CTRL", "IR"
 print("Gerando os tensores")
 files = get_files("../dados_spira/clean/")
-files = filtrar_audios(files, "VOWEL.wav")
+files = filtrar_audios(files, "RHYME.wav")
 EPOCHS = 400
 """
 Os labels são IR, PARK, ASMA, CTRL, TABA
