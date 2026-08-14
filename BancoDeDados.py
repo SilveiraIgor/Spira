@@ -53,7 +53,7 @@ def df_em_audios(df, audios, coluna):
             #print(nome_audio_puro)
             nome_audio = "../dados_spira/clean/"+ nome_audio_puro.replace("%","_")
             if nome_audio not in audios:
-                print(f"Problema com o audio {idx}: {nome_audio}")
+                print(f"-- Problema com o audio {idx}: {nome_audio}")
                 problemas_ausencia += 1
     print(f">>> O numero total de problemas foi {problemas_nan} de nans e {problemas_ausencia} de ausencia")
 
@@ -69,7 +69,7 @@ def filtrar_testes(df):
   return df_filtrado
 
 
-testar = "audios"
+testar = "dataset"
 
 # Read the CSV file into a pandas DataFrame
 df = pd.read_csv("../dados_spira/clean/Metadados/ColetaSPIRA_RECENTE-clean.csv")
@@ -84,4 +84,4 @@ if testar == "dataset":
     df_em_audios(df_filtrado, audios, 'coleta_parlenda')
     df_em_audios(df_filtrado, audios, 'coleta_frase')
 elif testar == "audios":
-    audios_em_df(df_filtrado, audios)
+    audios_em_df(df, audios)
