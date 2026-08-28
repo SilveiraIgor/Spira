@@ -51,6 +51,19 @@ def gerar_rotulos(linha_pesquisa):
   else:
     assert True == False, "Linha de pesquisa desconhecida"
 
+def criar_csv_preds(df, preds, dic_filtrado, nome_csv, nome_colunas):
+  df[nome_colunas[0]] = None
+  df[nome_colunas[1]] = None
+  for i in range(5):
+    pred_split = preds[i]
+    for indice in range(len(pred_split)):
+      data_valor = dic_filtrado[i]['data'][indice]
+      id_valor = dic_filtrado[i]['id'][indice]
+      #print(data_valor, id_valor)
+      filtro = (df["id"] == id_valor) & (df["data_coleta"] == data_valor)
+      df.loc[filtro, nome_colunas[0]] = pred_split[indice][0]
+      df.loc[filtro, nome_colunas[1]] = pred_split[indice][1]
+  df.to_csv(nome_csv, index=False)
 
 def test_perf_model(Y_hat, Y, tipo="regressao"):
   if tipo == "regressao":
