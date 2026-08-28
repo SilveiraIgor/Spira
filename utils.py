@@ -23,7 +23,34 @@ def separar_listas(lista, grupo1, grupo2):
             lista_grupo2.append(elemento)
     print(f"-- O grupo {grupo1} tem {len(lista_grupo1)} elementos, {grupo2} tem {len(lista_grupo2)} ")
     return lista_grupo1, lista_grupo2
+
+def get_arquivo_audios():
+    df = pd.read_csv("../dados_spira/clean/Metadados/arquivo2.csv")
+    return df
+
 #--------------------------------------------------
+def criar_dic():
+  return {0: {'X': [], 'Y':[], 'data': [], 'id': []},
+          1: {'X': [], 'Y':[], 'data': [], 'id': []},
+          2: {'X': [], 'Y':[], 'data': [], 'id': []},
+          3: {'X': [], 'Y':[], 'data': [], 'id': []},
+          4: {'X': [], 'Y':[], 'data': [], 'id': []},
+          5: {'X': [], 'Y':[], 'data': [], 'id': []}}
+
+def gerar_rotulos(linha_pesquisa):
+  if linha_pesquisa == "Controle":
+    return 0
+  elif linha_pesquisa == "Asma":
+    return 1
+  elif linha_pesquisa == "Insuficiência Respiratória":
+    return 2
+  elif linha_pesquisa == "Tabagismo":
+    return 3
+  elif linha_pesquisa == "Parkinson":
+    return 4
+  else:
+    assert True == False, "Linha de pesquisa desconhecida"
+
 
 def test_perf_model(Y_hat, Y, tipo="regressao"):
   if tipo == "regressao":

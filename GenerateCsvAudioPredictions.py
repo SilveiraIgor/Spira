@@ -10,6 +10,31 @@ from RedeNeural import NeuralNetwork
 
 at = AudioTagging(checkpoint_path=None, device='cuda')
 
+def gerar_dataset(df, coluna):
+    apendice = "../dados_spira/clean/"
+    arquivos_disponiveis = get_files(apendice)
+    dataset = criar_dic()
+    for idx,linha in df.iterrows():
+        if not pd.isna(linha[coluna]):
+            nome_editado = apendice+linha[coluna].replace("%", "_").replace("?","_")
+            if nome_editado not in arquivos_disponiveis:
+                print(f"O arquivo: {nome_editado} não está disponível")
+                break            
+        (audio, _) = librosa.load(audio_path, sr=32000, mono=True)
+        audio = audio[None, :]  # (batch_size, segment_samples)
+        #at = AudioTagging(checkpoint_path=None, device='cuda')
+        try:
+            (clipwise_output, embedding) = at.inference(audio)
+            split = int(linha["split"])
+            label = gerar_rotulos(linha["nome_linha_pesquisa"])
+            dataset[split]['X'].append(torch.from_numpy(embedding))
+            dataset[split]['Y'].append(label)
+            dataset[split]['data'].append(linha['data_coleta'])
+            dataste[split]['id'].append(linha['id'])
+        except RuntimeError as e:
+            print(f"Problema na hora de fazer o embedding do audio {nome_editado}, ele será então ignorado.")
+
+
 def gerar_tensores(lista_label_0, lista_label_1):
     embeddings_train = torch.empty((0, 2048))
     embeddings_test = torch.empty((0, 2048))
@@ -111,12 +136,16 @@ def gerar_medias(L0, L1, files):
 NOME_RUN = "classificacao-teste.csv"
 avaliacao = "medias"
 L0, L1 = "CTRL", "IR"
-print("Gerando os tensores")
+print("Pegando o .csv")
+df = get_arquivo_audios()
+dataset = gerar_dataset(df, "coleta_vogal")
+"""
 files = get_files("../dados_spira/clean/")
+
 files = filtrar_audios(files, "RHYME.wav")
 EPOCHS = 1
 """
-Os labels são IR, PARK, ASMA, CTRL, TABA
+#Os labels são IR, PARK, ASMA, CTRL, TABA
 """
 model = NeuralNetwork(2048, 27, 2)
 if avaliacao == "medias":
@@ -133,3 +162,4 @@ elif avaliacao == "runs":
     #print("Ultimos Kappas: ", ks_teste[-10:])
 else:
     print("opção de avaliação inválida")
+"""
