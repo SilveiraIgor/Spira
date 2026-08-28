@@ -193,17 +193,15 @@ def gerar_medias(ds):
 
 torch.manual_seed(42)
 NOME_RUN = "classificacao-teste.csv"
-avaliacao = "medias"
-L0, L1 = "CTRL", "IR"
 print("Pegando o .csv")
 df = get_arquivo_audios()
-dataset = gerar_dataset(df, "coleta_vogal")
-print(dataset[0]['Y'])
+variavel = "frase"
+dataset = gerar_dataset(df, "coleta_"+variavel)
 indices = [0,1]
 dataset_atual, dataset_outro = filtrar_dataset(dataset, indices)
 renomear_Y(dataset_atual, {indices[0]:0, indices[1]:1})
 preds = gerar_medias(dataset_atual)
-criar_csv_preds(df, preds, dataset_atual, "preds_asma_vogal.csv", ["vogal_0", "vogal_1"])
+criar_csv_preds(df, preds, dataset_atual, "preds_asma_"+variavel+".csv", [variavel+"_0", variavel+"_1"])
 """
 files = get_files("../dados_spira/clean/")
 
