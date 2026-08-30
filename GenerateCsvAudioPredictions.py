@@ -196,12 +196,13 @@ NOME_RUN = "classificacao-teste.csv"
 print("Pegando o .csv")
 df = get_arquivo_audios()
 variavel = "frase"
+doenca = "insuficiencia"
 dataset = gerar_dataset(df, "coleta_"+variavel)
-indices = [0,1]
+indices = [0,2]
 dataset_atual, dataset_outro = filtrar_dataset(dataset, indices)
 renomear_Y(dataset_atual, {indices[0]:0, indices[1]:1})
 preds = gerar_medias(dataset_atual)
-criar_csv_preds(df, preds, dataset_atual, "preds_asma_"+variavel+".csv", [variavel+"_0", variavel+"_1"])
+criar_csv_preds(df, preds, dataset_atual, "preds_"+doenca+"_"+variavel+".csv", [variavel+"_0", variavel+"_1"])
 """
 files = get_files("../dados_spira/clean/")
 
