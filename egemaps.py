@@ -13,7 +13,7 @@ for tipo_audio in ["VOWEL", "RHYME", "PHRASE"]:
     df = pd.DataFrame()
     for f in files:
         y = smile.process_file(f)
+        y['audio_'+tipo_audio] = f
         df = pd.concat([df, y], ignore_index=True)
-        df['audio_'+tipo_audio] = f
     print(df.shape)
     df.to_csv("egemaps-"+tipo_audio+".csv", index=False)
